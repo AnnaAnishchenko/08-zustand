@@ -1,6 +1,20 @@
 import Link from "next/link";
 import css from "./page.module.css"
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Page Not Found",
+  description: "The page you are looking for does not exist.",
+ 
+  openGraph: {
+     title: "Page Not Found",
+      description: "The page you are looking for does not exist.",
+       url: "https://08-zustand-phi-one.vercel.app/not-found",
+      images: [{ url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg"}]
+}
+  }
+
 
 function NotFound() {
   return (
