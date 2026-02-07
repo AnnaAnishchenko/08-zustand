@@ -4,6 +4,8 @@ import css from "./NoteForm.module.css";
 import { useRouter } from "next/navigation";
 import { createNote } from "@/lib/api";
 import { useState } from "react";
+import type { NoteTag } from "@/types/note";
+
 
 export default function NoteForm() {
   const router = useRouter();
@@ -14,7 +16,8 @@ export default function NoteForm() {
   async function formAction(formData: FormData) {
     const title = String(formData.get("title") || "").trim();
     const content = String(formData.get("content") || "").trim();
-    const tag = String(formData.get("tag") || "Todo");
+
+const tag = (formData.get("tag") as NoteTag) ?? "Todo";
 
     
     if (title.length < 3) {
