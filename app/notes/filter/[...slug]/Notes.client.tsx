@@ -12,6 +12,7 @@ import type { NoteTag } from "@/types/note";
 import SearchBox from "@/components/SearchBox/SearchBox";
 import Pagination from "@/components/Pagination/Pagination";
 
+
 import NoteList from "@/components/NoteList/NoteList";
 import Link from "next/link";
 
