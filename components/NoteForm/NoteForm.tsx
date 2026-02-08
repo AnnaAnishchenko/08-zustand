@@ -6,6 +6,7 @@ import { createNote } from "@/lib/api";
 import { useState } from "react";
 import type { NoteTag } from "@/types/note";
 
+import { useNoteStore } from "@/lib/store/noteStore";
 
 export default function NoteForm() {
   const router = useRouter();
@@ -17,9 +18,8 @@ export default function NoteForm() {
     const title = String(formData.get("title") || "").trim();
     const content = String(formData.get("content") || "").trim();
 
-const tag = (formData.get("tag") as NoteTag) ?? "Todo";
+    const tag = (formData.get("tag") as NoteTag) ?? "Todo";
 
-    
     if (title.length < 3) {
       setError("Title must be at least 3 characters");
       return;
@@ -30,6 +30,8 @@ const tag = (formData.get("tag") as NoteTag) ?? "Todo";
       setError(null);
 
       await createNote({ title, content, tag });
+      
+      clearDraft(); // Очищення чернетки
 
       router.push("/notes/filter/all");
       router.refresh();
@@ -39,6 +41,26 @@ const tag = (formData.get("tag") as NoteTag) ?? "Todo";
       setIsPending(false);
     }
   }
+
+  const draft = useNoteStore((state) => state.draft);
+  const setDraft = useNoteStore((state) => state.setDraft);
+  const clearDraft = useNoteStore((state) => state.clearDraft);
+
+  const handleChange = (
+    event:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLTextAreaElement>
+      | React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    // setDraft({ [event.target.name]: event.target.value });
+    // або 
+    const { name, value } = event.target;
+
+  if (name === "title") setDraft({ title: value });
+  if (name === "content") setDraft({ content: value });
+  if (name === "tag") setDraft({ tag: value as NoteTag });
+  };
+
 
   return (
     <form action={formAction} className={css.form}>
@@ -51,6 +73,8 @@ const tag = (formData.get("tag") as NoteTag) ?? "Todo";
           required
           minLength={3}
           className={css.input}
+          onChange={handleChange}
+          defaultValue={draft.title}
         />
       </div>
 
@@ -62,12 +86,22 @@ const tag = (formData.get("tag") as NoteTag) ?? "Todo";
           rows={8}
           maxLength={500}
           className={css.textarea}
+          onChange={handleChange}
+          defaultValue={draft.content}
         />
       </div>
 
       <div className={css.formGroup}>
         <label htmlFor="tag">Tag</label>
-        <select id="tag" name="tag" className={css.select} defaultValue="Todo">
+        <select
+          id="tag"
+          name="tag"
+          className={css.select}
+          // defaultValue= "Todo" 
+          onChange={handleChange}
+       value= {draft.tag} 
+
+        >
           <option value="Todo">Todo</option>
           <option value="Work">Work</option>
           <option value="Personal">Personal</option>
@@ -87,11 +121,7 @@ const tag = (formData.get("tag") as NoteTag) ?? "Todo";
           Cancel
         </button>
 
-        <button
-          type="submit"
-          disabled={isPending}
-          className={css.submitButton}
-        >
+        <button type="submit" disabled={isPending} className={css.submitButton}>
           Create note
         </button>
       </div>
