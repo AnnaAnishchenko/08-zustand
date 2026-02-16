@@ -7,17 +7,39 @@ import { useState } from "react";
 import type { NoteTag } from "@/types/note";
 
 import { useNoteStore } from "@/lib/store/noteStore";
+import { useMutation,useQueryClient } from "@tanstack/react-query";
+
+
+
 
 export default function NoteForm() {
   const router = useRouter();
+const queryClient = useQueryClient();
 
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, setIsPending] = useState(false);
+const draft = useNoteStore((state) => state.draft);
+  const setDraft = useNoteStore((state) => state.setDraft);
+  const clearDraft = useNoteStore((state) => state.clearDraft);
 
+    const [error, setError] = useState<string | null>(null);
+
+ const {mutate, isPending} =  useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
+     clearDraft(); // Очищення чернетки
+       queryClient.invalidateQueries({ queryKey: ["notes"] });
+
+      router.push("/notes/filter/all");
+    },
+   onError: () => {
+      setError("Failed to create note");
+    },
+  });
+  
+
+  // Функція для обробки відправки форми
   async function formAction(formData: FormData) {
     const title = String(formData.get("title") || "").trim();
     const content = String(formData.get("content") || "").trim();
-
     const tag = (formData.get("tag") as NoteTag) ?? "Todo";
 
     if (title.length < 3) {
@@ -25,26 +47,12 @@ export default function NoteForm() {
       return;
     }
 
-    try {
-      setIsPending(true);
-      setError(null);
+    setError(null);
 
-      await createNote({ title, content, tag });
-      
-      clearDraft(); // Очищення чернетки
-
-      router.push("/notes/filter/all");
-      router.refresh();
-    } catch {
-      setError("Failed to create note");
-    } finally {
-      setIsPending(false);
-    }
+    mutate({ title, content, tag });
   }
 
-  const draft = useNoteStore((state) => state.draft);
-  const setDraft = useNoteStore((state) => state.setDraft);
-  const clearDraft = useNoteStore((state) => state.clearDraft);
+  
 
   const handleChange = (
     event:
@@ -53,14 +61,12 @@ export default function NoteForm() {
       | React.ChangeEvent<HTMLSelectElement>,
   ) => {
     // setDraft({ [event.target.name]: event.target.value });
-    // або 
+    // або
     const { name, value } = event.target;
-
-  if (name === "title") setDraft({ title: value });
-  if (name === "content") setDraft({ content: value });
-  if (name === "tag") setDraft({ tag: value as NoteTag });
+    if (name === "title") setDraft({ title: value });
+    if (name === "content") setDraft({ content: value });
+    if (name === "tag") setDraft({ tag: value as NoteTag });
   };
-
 
   return (
     <form action={formAction} className={css.form}>
@@ -74,7 +80,8 @@ export default function NoteForm() {
           minLength={3}
           className={css.input}
           onChange={handleChange}
-          defaultValue={draft.title}
+          // defaultValue={draft.title}
+          value={draft.title}
         />
       </div>
 
@@ -87,7 +94,8 @@ export default function NoteForm() {
           maxLength={500}
           className={css.textarea}
           onChange={handleChange}
-          defaultValue={draft.content}
+          // defaultValue={draft.content}
+          value={draft.content}
         />
       </div>
 
@@ -97,10 +105,9 @@ export default function NoteForm() {
           id="tag"
           name="tag"
           className={css.select}
-          // defaultValue= "Todo" 
+          // defaultValue= "Todo"
           onChange={handleChange}
-       value= {draft.tag} 
-
+          value={draft.tag}
         >
           <option value="Todo">Todo</option>
           <option value="Work">Work</option>
